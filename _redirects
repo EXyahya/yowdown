@@ -1,0 +1,8 @@
+# Cloudflare Pages redirects
+# Home page (root) — no redirect needed, served by index.html
+
+# Trailing-slash normalization (optional, comment out if you prefer strict paths)
+/home  /  302
+/index  /  302
+
+# 404 fallback (Cloudflare Pages serves /404.html automatically if present)
