@@ -1,9 +1,8 @@
 /* ============================================================
-   Ywdown — client-side application
+   Ywdown — client-side application (inline embed edition)
    ------------------------------------------------------------
    Uses clickapi.net (the same backend Y2Mate uses) for downloads.
-   We embed their widget in a modal iframe — no backend, no Worker,
-   no API key, no credit card needed.
+   The widget is embedded INLINE below the video card — no popup.
    ============================================================ */
 (function () {
   'use strict';
@@ -48,7 +47,7 @@
   if (backdrop) backdrop.addEventListener('click', closeDrawer);
   var closeBtn = document.getElementById('drawerClose');
   if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); closeDownloadModal(); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
 
   // ---------- YouTube URL parsing ----------
   function extractVideoId(input) {
@@ -84,7 +83,7 @@
     });
   }
 
-  // ---------- Fetch video metadata (via noembed.com, CORS-enabled) ----------
+  // ---------- Fetch video metadata ----------
   function fetchVideoMeta(videoId) {
     var url = 'https://noembed.com/embed?url=https://www.youtube.com/watch?v=' + videoId;
     return fetch(url).then(function (r) {
@@ -135,8 +134,9 @@
     clearResults();
 
     var card = document.createElement('div');
-    card.className = 'video-card';
+    card.className = 'video-card video-card--inline';
 
+    // Header: thumbnail + title + author
     var header = document.createElement('div');
     header.className = 'video-card__header';
     header.innerHTML =
@@ -154,95 +154,63 @@
         '</div>' +
       '</div>';
 
-    var body = document.createElement('div');
-    body.className = 'video-card__body';
+    // Section divider
+    var divider = document.createElement('div');
+    divider.className = 'video-card__divider';
+    divider.innerHTML =
+      '<span class="divider-label">Choose your format</span>' +
+      '<span class="divider-line"></span>';
 
-    // Info banner explaining the download flow
-    var info = document.createElement('div');
-    info.className = 'download-info';
-    info.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
-      '<div>' +
-        '<strong>Click Download to open the format picker</strong>' +
-        '<span>You\'ll see all available MP3 and MP4 quality options in a popup window.</span>' +
-      '</div>';
-
-    var actions = document.createElement('div');
-    actions.className = 'video-card__actions';
-
-    var btn = document.createElement('button');
-    btn.className = 'btn-download btn-large';
-    btn.type = 'button';
-    btn.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-      'Download Video';
-    btn.addEventListener('click', function () {
-      openDownloadModal(meta);
-    });
-
-    actions.appendChild(btn);
-    body.appendChild(info);
-    body.appendChild(actions);
-    card.appendChild(header);
-    card.appendChild(body);
-    resultsEl.appendChild(card);
-  }
-
-  // ---------- Download modal (embeds clickapi.net widget) ----------
-  var modalEl = document.getElementById('downloadModal');
-  var modalFrame = document.getElementById('downloadFrame');
-  var modalTitle = document.getElementById('modalTitle');
-  var modalClose = document.getElementById('modalClose');
-  var modalBackdrop = document.getElementById('modalBackdrop');
-
-  function openDownloadModal(meta) {
-    if (!modalEl || !modalFrame) {
-      // Fallback: open in new tab
-      window.open('https://clickapi.net/api/widgetplus?url=' + encodeURIComponent(meta.url), '_blank', 'noopener');
-      return;
-    }
+    // Embedded widget container
+    var widgetWrap = document.createElement('div');
+    widgetWrap.className = 'widget-embed';
 
     var widgetUrl = 'https://clickapi.net/api/widgetplus?url=' + encodeURIComponent(meta.url);
-    modalFrame.src = widgetUrl;
-    if (modalTitle) modalTitle.textContent = meta.title.length > 60 ? meta.title.slice(0, 60) + '…' : meta.title;
 
-    modalEl.classList.add('open');
-    modalBackdrop.classList.add('open');
-    modalEl.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
+    widgetWrap.innerHTML =
+      '<div class="widget-embed__loading">' +
+        '<div class="loader"></div>' +
+        '<span>Loading download options…</span>' +
+      '</div>' +
+      '<iframe src="' + widgetUrl + '" ' +
+        'title="Download options for ' + escapeHtml(meta.title) + '" ' +
+        'referrerpolicy="no-referrer-when-downgrade" ' +
+        'allow="fullscreen" ' +
+        'sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-downloads" ' +
+        'loading="lazy"></iframe>';
 
-    // Show loading state until iframe loads
-    modalFrame.style.opacity = '0';
-    modalFrame.addEventListener('load', function onLoad() {
-      modalFrame.style.opacity = '1';
-      modalFrame.removeEventListener('load', onLoad);
+    var iframe = widgetWrap.querySelector('iframe');
+    var loadingEl = widgetWrap.querySelector('.widget-embed__loading');
+
+    // Hide loading state once iframe loads
+    iframe.addEventListener('load', function () {
+      if (loadingEl) loadingEl.style.display = 'none';
+      iframe.style.opacity = '1';
     });
 
-    // Timeout fallback — if iframe doesn't load in 8s, show a "open in new tab" link
+    // Fallback: if iframe takes too long, show "open in new tab" link
     setTimeout(function () {
-      if (modalFrame.style.opacity === '0') {
-        var fallback = document.getElementById('modalFallback');
-        if (fallback) fallback.style.display = 'block';
+      if (loadingEl && loadingEl.style.display !== 'none') {
+        var fallback = document.createElement('div');
+        fallback.className = 'widget-fallback';
+        fallback.innerHTML =
+          '<p>Taking longer than usual. You can open the download page directly:</p>' +
+          '<a href="' + widgetUrl + '" target="_blank" rel="noopener" class="btn-download btn-large">Open download page →</a>';
+        widgetWrap.appendChild(fallback);
       }
-    }, 8000);
-  }
+    }, 12000);
 
-  function closeDownloadModal() {
-    if (!modalEl || !modalBackdrop) return;
-    modalEl.classList.remove('open');
-    modalBackdrop.classList.remove('open');
-    modalEl.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    if (modalFrame) {
-      // Clear the iframe to stop any background processes
-      setTimeout(function () { modalFrame.src = 'about:blank'; }, 100);
-    }
-    var fallback = document.getElementById('modalFallback');
-    if (fallback) fallback.style.display = 'none';
-  }
+    card.appendChild(header);
+    card.appendChild(divider);
+    card.appendChild(widgetWrap);
+    resultsEl.appendChild(card);
 
-  if (modalClose) modalClose.addEventListener('click', closeDownloadModal);
-  if (modalBackdrop) modalBackdrop.addEventListener('click', closeDownloadModal);
+    // Smooth scroll to results
+    setTimeout(function () {
+      var top = resultsEl.getBoundingClientRect().top + window.scrollY - 20;
+      window.scrollTo({ top: top, behavior: 'smooth' });
+    }, 50);
+  }
 
   // ---------- Form submit ----------
   if (formEl) {
@@ -259,8 +227,6 @@
       fetchVideoMeta(id)
         .then(function (meta) {
           renderVideoCard(meta);
-          var top = resultsEl.getBoundingClientRect().top + window.scrollY - 20;
-          window.scrollTo({ top: top, behavior: 'smooth' });
         })
         .catch(function (err) {
           showError('Could not fetch video info. The video may be private, age-restricted, or removed. (' + (err.message || 'error') + ')');
