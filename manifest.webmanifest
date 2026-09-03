@@ -1,0 +1,20 @@
+{
+  "name": "Ywdown",
+  "short_name": "Ywdown",
+  "description": "Download high quality MP3 and MP4 from YouTube. Fast, free, no signup.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/assets/images/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
