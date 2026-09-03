@@ -1,27 +1,31 @@
 /* ============================================================
-   Ywdown — Modern app (v3)
-   Features: video card, audio/video formats, thumbnail download,
-             trim UI, clickapi.net embed for actual download
+   Ywdown — Modern app (v4)
+   Uses Cloudflare Turnstile + vd6s.net API via CORS proxy.
+   Real format buttons (one per quality), real downloads.
    ============================================================ */
 (function () {
   'use strict';
+
+  // ---------- Config ----------
+  // Update this with YOUR deployed Worker URL
+  var PROXY_URL = 'https://vd6s-proxy.ywdown.workers.dev';
+  var TURNSTILE_SITEKEY = '0x4AAAAAAAzuNQE5IJEnuaAp';
 
   // ---------- Theme toggle ----------
   var THEME_KEY = 'ywdown-theme';
   var root = document.documentElement;
   var saved = localStorage.getItem(THEME_KEY);
-  if (saved === 'dark') root.setAttribute('data-theme', 'dark');
-  else if (saved === 'light') root.setAttribute('data-theme', 'light');
-  else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    root.setAttribute('data-theme', 'dark');
-  }
+  if (saved === 'light') root.setAttribute('data-theme', 'light');
+  else if (saved === 'dark') root.setAttribute('data-theme', 'dark');
+  // Default is dark (no attribute), so no else needed
 
   var themeBtn = document.getElementById('themeToggle');
   if (themeBtn) {
     themeBtn.addEventListener('click', function () {
       var cur = root.getAttribute('data-theme');
-      var next = cur === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
+      var next = cur === 'light' ? 'dark' : 'light';
+      if (next === 'dark') root.removeAttribute('data-theme');
+      else root.setAttribute('data-theme', 'light');
       localStorage.setItem(THEME_KEY, next);
     });
   }
@@ -57,18 +61,14 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
 
   // ---------- Anti-AdBlock detection ----------
-  // Detect adblock by checking if our hilltopads.js loaded an ad element.
-  // If after 3s no ad element is detected, show the overlay.
   setTimeout(function () {
     var adSlots = document.querySelectorAll('.ad-banner');
     var adDetected = false;
     adSlots.forEach(function (slot) {
-      // Real ads usually create iframes or child elements
       if (slot.children.length > 0 || slot.offsetHeight > 100) {
         adDetected = true;
       }
     });
-    // Also check if hilltopads.js was blocked entirely (script error)
     if (!window.hilltopadsLoaded && !adDetected) {
       var overlay = document.getElementById('adblockOverlay');
       if (overlay) overlay.classList.add('active');
@@ -80,9 +80,24 @@
     adblockCloseBtn.addEventListener('click', function () {
       var overlay = document.getElementById('adblockOverlay');
       if (overlay) overlay.classList.remove('active');
-      // Reload to re-trigger ads
       setTimeout(function () { window.location.reload(); }, 500);
     });
+  }
+
+  // ---------- Toast notification ----------
+  function showToast(message, duration) {
+    var existing = document.getElementById('ywdown-toast');
+    if (existing) existing.remove();
+    var toast = document.createElement('div');
+    toast.id = 'ywdown-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-elev);color:var(--text);padding:14px 22px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:var(--shadow-lg);z-index:9999;max-width:90vw;text-align:center;line-height:1.5;border:1px solid var(--border);';
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    setTimeout(function () {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(function () { if (toast.parentNode) toast.remove(); }, 300);
+    }, duration || 5000);
   }
 
   // ---------- YouTube URL parsing ----------
@@ -112,16 +127,21 @@
     });
   }
 
-  function formatDuration(seconds) {
-    if (!seconds || seconds < 0) return '';
-    var h = Math.floor(seconds / 3600);
-    var m = Math.floor((seconds % 3600) / 60);
-    var s = Math.floor(seconds % 60);
-    if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-    return m + ':' + String(s).padStart(2, '0');
+  // ---------- MurmurHash64 (matches vd6s.net) ----------
+  function murmurHash64(str) {
+    var h1 = 0xdeadbeef;
+    var h2 = 0x41c6ce57;
+    for (var i = 0; i < str.length; i++) {
+      var k = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ k, 0x85ebca6b);
+      h2 = Math.imul(h2 ^ k, 0xc2b2ae35);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 0x85ebca6b) ^ Math.imul(h2 ^ (h2 >>> 13), 0xc2b2ae35);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 0x85ebca6b) ^ Math.imul(h1 ^ (h1 >>> 13), 0xc2b2ae35);
+    return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
   }
 
-  // ---------- Fetch video metadata ----------
+  // ---------- Fetch video metadata (for thumbnail) ----------
   function fetchVideoMeta(videoId) {
     var url = 'https://noembed.com/embed?url=https://www.youtube.com/watch?v=' + videoId;
     return fetch(url).then(function (r) {
@@ -140,15 +160,75 @@
     });
   }
 
-  // ---------- Build thumbnail options ----------
-  function getThumbnailOptions(videoId) {
-    return [
-      { quality: 'Max Resolution', size: '1280×720', url: 'https://i.ytimg.com/vi/' + videoId + '/maxresdefault.jpg' },
-      { quality: 'Standard Definition', size: '640×480', url: 'https://i.ytimg.com/vi/' + videoId + '/sddefault.jpg' },
-      { quality: 'High Quality', size: '480×360', url: 'https://i.ytimg.com/vi/' + videoId + '/hqdefault.jpg' },
-      { quality: 'Medium Quality', size: '320×180', url: 'https://i.ytimg.com/vi/' + videoId + '/mqdefault.jpg' },
-      { quality: 'Default', size: '120×90', url: 'https://i.ytimg.com/vi/' + videoId + '/default.jpg' }
-    ];
+  // ---------- Call vd6s.net analyze API via proxy ----------
+  function analyzeVideo(videoUrl, platform, cftoken) {
+    var mhash = murmurHash64(videoUrl);
+    return fetch(PROXY_URL + '/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: videoUrl,
+        platform: platform || 'youtube',
+        mhash: mhash,
+        cftoken: cftoken,
+        lang: 'en'
+      })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('Proxy HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
+  // ---------- Render Turnstile captcha ----------
+  var turnstileToken = null;
+  var captchaBox = null;
+  var pendingVideoUrl = null;
+  var pendingPlatform = 'youtube';
+
+  function showCaptcha(videoUrl, platform) {
+    pendingVideoUrl = videoUrl;
+    pendingPlatform = platform;
+    if (!captchaBox) {
+      captchaBox = document.getElementById('captchaBox');
+    }
+    if (captchaBox) {
+      captchaBox.classList.add('active');
+      var container = document.getElementById('captchaContainer');
+      if (container && window.turnstile) {
+        container.innerHTML = '';
+        window.turnstile.render('#captchaContainer', {
+          sitekey: TURNSTILE_SITEKEY,
+          callback: function (token) {
+            turnstileToken = token;
+            onCaptchaSolved();
+          },
+          errorCallback: function () {
+            showToast('Captcha failed. Please try again.', 5000);
+            captchaBox.classList.remove('active');
+          }
+        });
+      }
+    }
+  }
+
+  function onCaptchaSolved() {
+    if (!pendingVideoUrl || !turnstileToken) return;
+    showLoader('Analyzing video…');
+    if (captchaBox) captchaBox.classList.remove('active');
+    analyzeVideo(pendingVideoUrl, pendingPlatform, turnstileToken)
+      .then(function (data) {
+        if (data.status === 'success') {
+          // Parse the HTML response to extract formats
+          renderResultsFromVd6s(data, pendingVideoUrl);
+        } else if (data.status === 'un supported') {
+          showError('This URL is not supported. Try a public YouTube video.');
+        } else {
+          showError('Could not analyze video: ' + (data.status || 'unknown'));
+        }
+      })
+      .catch(function (err) {
+        showError('Network error: ' + (err.message || 'unknown') + '. Make sure you deployed the vd6s-proxy Worker.');
+      });
   }
 
   // ---------- Render ----------
@@ -165,7 +245,7 @@
     resultsEl.innerHTML =
       '<div class="results-status">' +
         '<div class="loader"></div>' +
-        '<span>' + (label || 'Fetching video info…') + '</span>' +
+        '<span>' + (label || 'Loading…') + '</span>' +
       '</div>';
   }
 
@@ -178,9 +258,29 @@
       '</div>';
   }
 
-  function renderVideoCard(meta) {
+  // Parse vd6s.net's HTML response and extract format buttons
+  function renderResultsFromVd6s(data, videoUrl) {
     if (!resultsEl) return;
     clearResults();
+
+    // Extract video ID from URL
+    var id = extractVideoId(videoUrl);
+    fetchVideoMeta(id).then(function (meta) {
+      renderVideoCardWithFormats(meta, data);
+    }).catch(function () {
+      // Fallback: use just the URL
+      renderVideoCardWithFormats({ id: id, url: videoUrl, title: 'YouTube Video', author: '', thumbnail: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg', provider: 'YouTube' }, data);
+    });
+  }
+
+  function renderVideoCardWithFormats(meta, vd6sData) {
+    if (!resultsEl) return;
+    clearResults();
+
+    // Parse the HTML from vd6s to find download links
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(vd6sData.result || '', 'text/html');
+    var downloadLinks = doc.querySelectorAll('a[href*="download"], a[href*="convert"], a.btn-download, a[download]');
 
     var card = document.createElement('div');
     card.className = 'video-card';
@@ -189,44 +289,96 @@
     var headerEl = document.createElement('div');
     headerEl.className = 'video-card__header';
     headerEl.innerHTML =
-      '<a class="video-card__thumb" href="' + meta.url + '" target="_blank" rel="noopener">' +
+      '<a class="video-card__thumb" href="' + escapeHtml(meta.url) + '" target="_blank" rel="noopener">' +
         '<img src="' + escapeHtml(meta.thumbnail) + '" alt="' + escapeHtml(meta.title) + '" loading="lazy" referrerpolicy="no-referrer">' +
         '<span class="video-card__thumb-overlay">▶</span>' +
       '</a>' +
       '<div class="video-card__info">' +
         '<h3 class="video-card__title">' + escapeHtml(meta.title) + '</h3>' +
         '<div class="video-card__meta">' +
-          '<span>' + escapeHtml(meta.author) + '</span>' +
-          '<span class="dot"></span>' +
+          (meta.author ? '<span>' + escapeHtml(meta.author) + '</span><span class="dot"></span>' : '') +
           '<span>' + escapeHtml(meta.provider) + '</span>' +
           '<span class="dot"></span>' +
-          '<span>ID: ' + meta.id + '</span>' +
+          '<span>ID: ' + escapeHtml(meta.id) + '</span>' +
         '</div>' +
       '</div>';
 
-    // Tabs
+    // Body
     var bodyEl = document.createElement('div');
     bodyEl.className = 'video-card__body';
 
+    // Tabs
     var tabsEl = document.createElement('div');
     tabsEl.className = 'tabs';
     tabsEl.innerHTML =
       '<button class="tab active" data-tab="download" type="button">Download</button>' +
-      '<button class="tab" data-tab="thumbnail" type="button">Thumbnail</button>' +
-      '<button class="tab" data-tab="trim" type="button">Trim</button>';
+      '<button class="tab" data-tab="thumbnail" type="button">Thumbnail</button>';
 
     var contentEl = document.createElement('div');
 
-    // Build the three tab panels
-    contentEl.appendChild(buildDownloadPanel(meta));
-    contentEl.appendChild(buildThumbnailPanel(meta));
-    contentEl.appendChild(buildTrimPanel(meta));
+    // Download panel — one button per format from vd6s
+    var downloadPanel = document.createElement('div');
+    downloadPanel.setAttribute('data-panel', 'download');
+    downloadPanel.className = 'format-list';
 
-    // Show only the first panel
-    var panels = contentEl.children;
-    for (var i = 1; i < panels.length; i++) {
-      panels[i].style.display = 'none';
+    if (downloadLinks.length > 0) {
+      // Real format buttons from vd6s.net
+      downloadLinks.forEach(function (link) {
+        var href = link.getAttribute('href') || '';
+        var text = (link.textContent || '').trim();
+        var quality = link.getAttribute('data-quality') || '';
+        var format = link.getAttribute('data-format') || '';
+
+        if (!href || href === '#') return;
+
+        // Build absolute URL if relative
+        if (href.indexOf('http') !== 0) {
+          href = 'https://vd6s.net' + (href.charAt(0) === '/' ? '' : '/') + href;
+        }
+
+        var row = document.createElement('div');
+        row.className = 'format-row';
+
+        var isAudio = text.toLowerCase().indexOf('mp3') >= 0 || text.toLowerCase().indexOf('m4a') >= 0 || text.toLowerCase().indexOf('audio') >= 0;
+        var badgeClass = isAudio ? 'audio' : 'video';
+        var badgeText = format || (isAudio ? 'MP3' : 'MP4');
+
+        row.innerHTML =
+          '<div class="format-info">' +
+            '<div class="format-badge ' + badgeClass + '">' + escapeHtml(badgeText) + '</div>' +
+            '<div class="format-meta"><strong>' + escapeHtml(text) + '</strong><span class="file-size">Click to download</span></div>' +
+          '</div>' +
+          '<a class="btn-download" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+            'Download' +
+          '</a>';
+
+        downloadPanel.appendChild(row);
+      });
+    } else {
+      // Fallback: open vd6s.net with URL pre-copied
+      downloadPanel.innerHTML =
+        '<div style="padding:8px 4px 12px;color:var(--text-muted);font-size:14px;line-height:1.6;">' +
+          'Click the button below to open the download page. The YouTube URL is already copied to your clipboard.' +
+        '</div>' +
+        '<div class="format-row">' +
+          '<div class="format-info">' +
+            '<div class="format-badge video">ALL</div>' +
+            '<div class="format-meta"><strong>All formats</strong><span class="file-size">MP3, MP4, WEBM, 4K, trim</span></div>' +
+          '</div>' +
+          '<button class="btn-download" type="button" id="open-vd6s-btn">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+            'Open' +
+          '</button>' +
+        '</div>';
     }
+
+    // Thumbnail panel
+    var thumbnailPanel = buildThumbnailPanel(meta);
+
+    contentEl.appendChild(downloadPanel);
+    contentEl.appendChild(thumbnailPanel);
+    thumbnailPanel.style.display = 'none';
 
     // Tab switching
     tabsEl.querySelectorAll('.tab').forEach(function (tab) {
@@ -234,9 +386,8 @@
         tabsEl.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
         tab.classList.add('active');
         var target = tab.getAttribute('data-tab');
-        for (var j = 0; j < panels.length; j++) {
-          panels[j].style.display = (panels[j].getAttribute('data-panel') === target) ? '' : 'none';
-        }
+        downloadPanel.style.display = (target === 'download') ? '' : 'none';
+        thumbnailPanel.style.display = (target === 'thumbnail') ? '' : 'none';
       });
     });
 
@@ -247,6 +398,19 @@
     card.appendChild(bodyEl);
     resultsEl.appendChild(card);
 
+    // Bind open-vd6s button if exists
+    var openBtn = document.getElementById('open-vd6s-btn');
+    if (openBtn) {
+      openBtn.addEventListener('click', function () {
+        copyToClipboard(meta.url).then(function () {
+          window.open('https://vd6s.net/en5/', '_blank', 'noopener,noreferrer');
+          showToast('✓ URL copied! Paste it on vd6s.net (Ctrl+V)', 6000);
+        }).catch(function () {
+          window.open('https://vd6s.net/en5/', '_blank', 'noopener,noreferrer');
+        });
+      });
+    }
+
     // Smooth scroll to results
     setTimeout(function () {
       var top = resultsEl.getBoundingClientRect().top + window.scrollY - 20;
@@ -254,83 +418,25 @@
     }, 50);
   }
 
-  function buildDownloadPanel(meta) {
-    var panel = document.createElement('div');
-    panel.setAttribute('data-panel', 'download');
-    panel.className = 'format-list';
-    panel.innerHTML =
-      '<div style="padding:8px 4px 12px;color:var(--text-muted);font-size:14px;line-height:1.6;">' +
-        'Choose a format below. Click <strong>Download</strong> to open the format picker, then save your file.' +
-      '</div>' +
-      '<div class="format-row">' +
-        '<div class="format-info">' +
-          '<div class="format-badge">MP3</div>' +
-          '<div class="format-meta"><strong>Audio MP3 — All qualities</strong><span class="file-size">64 / 128 / 192 / 256 / 320 kbps</span></div>' +
-        '</div>' +
-        '<button class="btn-download" type="button" data-url="' + escapeHtml(meta.url) + '">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-          'Download' +
-        '</button>' +
-      '</div>' +
-      '<div class="format-row">' +
-        '<div class="format-info">' +
-          '<div class="format-badge">MP4</div>' +
-          '<div class="format-meta"><strong>Video MP4 — All resolutions</strong><span class="file-size">360p / 480p / 720p / 1080p / 1440p / 4K</span></div>' +
-        '</div>' +
-        '<button class="btn-download" type="button" data-url="' + escapeHtml(meta.url) + '">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-          'Download' +
-        '</button>' +
-      '</div>' +
-      '<div class="format-row">' +
-        '<div class="format-info">' +
-          '<div class="format-badge">WEBM</div>' +
-          '<div class="format-meta"><strong>Video WEBM — High efficiency</strong><span class="file-size">1080p / 1440p / 4K</span></div>' +
-        '</div>' +
-        '<button class="btn-download" type="button" data-url="' + escapeHtml(meta.url) + '">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-          'Download' +
-        '</button>' +
-      '</div>' +
-      '<div class="format-row">' +
-        '<div class="format-info">' +
-          '<div class="format-badge">M4A</div>' +
-          '<div class="format-meta"><strong>Audio M4A — Apple compatible</strong><span class="file-size">128 kbps</span></div>' +
-        '</div>' +
-        '<button class="btn-download" type="button" data-url="' + escapeHtml(meta.url) + '">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-          'Download' +
-        '</button>' +
-      '</div>' +
-      '<div style="padding:8px 4px;color:var(--text-subtle);font-size:12px;line-height:1.6;">' +
-        'Note: The download picker opens in a popup. Choose your exact quality there and the file will save to your device.' +
-      '</div>';
-
-    // Bind click → open clickapi.net widget in new window
-    panel.querySelectorAll('.btn-download').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var url = btn.getAttribute('data-url');
-        var widgetUrl = 'https://clickapi.net/api/widgetplus?url=' + encodeURIComponent(url);
-        window.open(widgetUrl, '_blank', 'noopener,noreferrer,width=800,height=700');
-      });
-    });
-
-    return panel;
-  }
-
   function buildThumbnailPanel(meta) {
     var panel = document.createElement('div');
     panel.setAttribute('data-panel', 'thumbnail');
     panel.className = 'thumbnail-grid';
 
-    var thumbs = getThumbnailOptions(meta.id);
+    var thumbs = [
+      { quality: 'Max Resolution', size: '1280×720', url: 'https://i.ytimg.com/vi/' + meta.id + '/maxresdefault.jpg' },
+      { quality: 'Standard Definition', size: '640×480', url: 'https://i.ytimg.com/vi/' + meta.id + '/sddefault.jpg' },
+      { quality: 'High Quality', size: '480×360', url: 'https://i.ytimg.com/vi/' + meta.id + '/hqdefault.jpg' },
+      { quality: 'Medium Quality', size: '320×180', url: 'https://i.ytimg.com/vi/' + meta.id + '/mqdefault.jpg' },
+      { quality: 'Default', size: '120×90', url: 'https://i.ytimg.com/vi/' + meta.id + '/default.jpg' }
+    ];
+
     thumbs.forEach(function (t) {
       var card = document.createElement('a');
       card.className = 'thumb-card';
       card.href = t.url;
       card.target = '_blank';
       card.rel = 'noopener';
-      card.download = 'thumbnail-' + meta.id + '.jpg';
       card.innerHTML =
         '<img src="' + t.url + '" alt="' + escapeHtml(t.quality) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.style.display=\'none\'">' +
         '<div class="thumb-card-body">' +
@@ -340,63 +446,24 @@
       panel.appendChild(card);
     });
 
-    var hint = document.createElement('div');
-    hint.style.cssText = 'grid-column:1/-1;padding:8px 4px;color:var(--text-subtle);font-size:12px;line-height:1.6;';
-    hint.innerHTML = 'Tip: Right-click any thumbnail above and select "Save image as…" to download. The "Max Resolution" option may not be available for all videos.';
-    panel.appendChild(hint);
-
     return panel;
   }
 
-  function buildTrimPanel(meta) {
-    var panel = document.createElement('div');
-    panel.setAttribute('data-panel', 'trim');
-    panel.className = 'trim-section';
-    panel.innerHTML =
-      '<div style="padding:8px 4px 16px;color:var(--text-muted);font-size:14px;line-height:1.6;">' +
-        'Set a start and end time, then click Download to open the picker. The trim happens automatically when you select your format.' +
-      '</div>' +
-      '<div class="trim-inputs">' +
-        '<div class="trim-field">' +
-          '<label for="trim-start-' + meta.id + '">Start time (MM:SS)</label>' +
-          '<input type="text" id="trim-start-' + meta.id + '" placeholder="00:00" pattern="[0-9]{1,2}:[0-9]{2}">' +
-          '<div class="trim-hint">e.g. 00:30</div>' +
-        '</div>' +
-        '<div class="trim-field">' +
-          '<label for="trim-end-' + meta.id + '">End time (MM:SS)</label>' +
-          '<input type="text" id="trim-end-' + meta.id + '" placeholder="03:45" pattern="[0-9]{1,2}:[0-9]{2}">' +
-          '<div class="trim-hint">e.g. 01:15</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="trim-actions">' +
-        '<button class="btn-download" type="button" id="trim-download-' + meta.id + '">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-          'Trim &amp; Download' +
-        '</button>' +
-        '<span style="color:var(--text-subtle);font-size:13px;">Opens the download picker with your trim applied</span>' +
-      '</div>' +
-      '<div style="margin-top:20px;padding:14px 16px;background:var(--bg-alt);border-radius:var(--radius-sm);font-size:12.5px;color:var(--text-muted);line-height:1.6;">' +
-        '<strong style="color:var(--text);">How trim works:</strong> The download picker handles the actual trimming server-side. Your start/end times are sent automatically when you select a format. Trimmed clips may have a slight offset due to keyframe alignment.' +
-      '</div>';
-
-    var btn = panel.querySelector('#trim-download-' + meta.id);
-    if (btn) {
-      btn.addEventListener('click', function () {
-        var startInput = document.getElementById('trim-start-' + meta.id);
-        var endInput = document.getElementById('trim-end-' + meta.id);
-        var start = startInput ? startInput.value.trim() : '';
-        var end = endInput ? endInput.value.trim() : '';
-
-        // Build URL with trim parameters (clickapi ignores these but it's a UI feature)
-        var widgetUrl = 'https://clickapi.net/api/widgetplus?url=' + encodeURIComponent(meta.url);
-        if (start) widgetUrl += '&start=' + encodeURIComponent(start);
-        if (end) widgetUrl += '&end=' + encodeURIComponent(end);
-
-        window.open(widgetUrl, '_blank', 'noopener,noreferrer,width=800,height=700');
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    } else {
+      return new Promise(function (resolve, reject) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); resolve(); } catch (e) { reject(e); }
+        document.body.removeChild(ta);
       });
     }
-
-    return panel;
   }
 
   // ---------- Form submit ----------
@@ -410,14 +477,11 @@
         return;
       }
 
-      showLoader('Fetching video info…');
-      fetchVideoMeta(id)
-        .then(function (meta) {
-          renderVideoCard(meta);
-        })
-        .catch(function (err) {
-          showError('Could not fetch video info. The video may be private, age-restricted, or removed. (' + (err.message || 'error') + ')');
-        });
+      var videoUrl = 'https://www.youtube.com/watch?v=' + id;
+      var platform = 'youtube';
+
+      // Show captcha box
+      showCaptcha(videoUrl, platform);
     });
   }
 

@@ -29,6 +29,9 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+  <!-- Cloudflare Turnstile (for vd6s.net API calls) -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
   <!-- JSON-LD structured data -->
   <script type="application/ld+json">
   {
@@ -119,6 +122,12 @@
         </p>
       </div>
     </section>
+
+    <!-- ============ CAPTCHA BOX (for vd6s.net API) ============ -->
+    <div class="captcha-box" id="captchaBox">
+      <p>Please complete the captcha to analyze your video</p>
+      <div class="captcha-container" id="captchaContainer"></div>
+    </div>
 
     <!-- ============ TOP AD ============ -->
     <div class="ad-slot">
