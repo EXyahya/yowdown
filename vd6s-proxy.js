@@ -10,8 +10,8 @@
  *
  * Endpoints:
  *   POST /analyze   → calls https://vd6s.net/mates/en/analyze/ajax
- *   POST /convert   → calls https://vd6s.net/mates/en/convert
- *   GET  /status    → calls https://vd6s.net/mates/en/convert/status
+ *   POST /convert    → calls https://vd6s.net/mates/en/convert
+ *   GET  /status     → calls https://vd6s.net/mates/en/convert/status
  */
 
 const VD6S_BASE = 'https://vd6s.net';

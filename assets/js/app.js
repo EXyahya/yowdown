@@ -1,7 +1,8 @@
 /* ============================================================
-   Ywdown — Modern app (v4)
+   Ywdown — Modern app (v6)
    Uses Cloudflare Turnstile + vd6s.net API via CORS proxy.
-   Real format buttons (one per quality), real downloads.
+   Includes automatic fallback to clipboard+popup if Turnstile
+   is blocked by AdBlock or fails to load.
    ============================================================ */
 (function () {
   'use strict';
@@ -17,7 +18,6 @@
   var saved = localStorage.getItem(THEME_KEY);
   if (saved === 'light') root.setAttribute('data-theme', 'light');
   else if (saved === 'dark') root.setAttribute('data-theme', 'dark');
-  // Default is dark (no attribute), so no else needed
 
   var themeBtn = document.getElementById('themeToggle');
   if (themeBtn) {
@@ -127,6 +127,23 @@
     });
   }
 
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    } else {
+      return new Promise(function (resolve, reject) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); resolve(); } catch (e) { reject(e); }
+        document.body.removeChild(ta);
+      });
+    }
+  }
+
   // ---------- MurmurHash64 (matches vd6s.net) ----------
   function murmurHash64(str) {
     var h1 = 0xdeadbeef;
@@ -179,62 +196,15 @@
     });
   }
 
-  // ---------- Render Turnstile captcha ----------
-  var turnstileToken = null;
-  var captchaBox = null;
-  var pendingVideoUrl = null;
-  var pendingPlatform = 'youtube';
-
-  function showCaptcha(videoUrl, platform) {
-    pendingVideoUrl = videoUrl;
-    pendingPlatform = platform;
-    if (!captchaBox) {
-      captchaBox = document.getElementById('captchaBox');
-    }
-    if (captchaBox) {
-      captchaBox.classList.add('active');
-      var container = document.getElementById('captchaContainer');
-      if (container && window.turnstile) {
-        container.innerHTML = '';
-        window.turnstile.render('#captchaContainer', {
-          sitekey: TURNSTILE_SITEKEY,
-          callback: function (token) {
-            turnstileToken = token;
-            onCaptchaSolved();
-          },
-          errorCallback: function () {
-            showToast('Captcha failed. Please try again.', 5000);
-            captchaBox.classList.remove('active');
-          }
-        });
-      }
-    }
-  }
-
-  function onCaptchaSolved() {
-    if (!pendingVideoUrl || !turnstileToken) return;
-    showLoader('Analyzing video…');
-    if (captchaBox) captchaBox.classList.remove('active');
-    analyzeVideo(pendingVideoUrl, pendingPlatform, turnstileToken)
-      .then(function (data) {
-        if (data.status === 'success') {
-          // Parse the HTML response to extract formats
-          renderResultsFromVd6s(data, pendingVideoUrl);
-        } else if (data.status === 'un supported') {
-          showError('This URL is not supported. Try a public YouTube video.');
-        } else {
-          showError('Could not analyze video: ' + (data.status || 'unknown'));
-        }
-      })
-      .catch(function (err) {
-        showError('Network error: ' + (err.message || 'unknown') + '. Make sure you deployed the vd6s-proxy Worker.');
-      });
-  }
-
   // ---------- Render ----------
   var resultsEl = document.getElementById('results');
   var formEl = document.getElementById('searchForm');
   var inputEl = document.getElementById('url');
+  var captchaBox = document.getElementById('captchaBox');
+  var captchaContainer = document.getElementById('captchaContainer');
+
+  var pendingVideoUrl = null;
+  var pendingPlatform = 'youtube';
 
   function clearResults() {
     if (resultsEl) resultsEl.innerHTML = '';
@@ -258,18 +228,108 @@
       '</div>';
   }
 
-  // Parse vd6s.net's HTML response and extract format buttons
+  // ---------- Show captcha ----------
+  function showCaptcha(videoUrl, platform) {
+    pendingVideoUrl = videoUrl;
+    pendingPlatform = platform;
+
+    // Check if Turnstile loaded
+    if (!window.turnstile) {
+      // Turnstile script was blocked (likely by AdBlock) — fallback to clipboard approach
+      console.warn('Turnstile not loaded — using fallback');
+      fallbackToClipboard(videoUrl);
+      return;
+    }
+
+    if (captchaBox) {
+      captchaBox.classList.add('active');
+      // Scroll to captcha
+      captchaBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    if (captchaContainer && window.turnstile) {
+      captchaContainer.innerHTML = '';
+      try {
+        window.turnstile.render('#captchaContainer', {
+          sitekey: TURNSTILE_SITEKEY,
+          callback: function (token) {
+            onCaptchaSolved(token);
+          },
+          errorCallback: function () {
+            showToast('Captcha failed. Using fallback method...', 4000);
+            setTimeout(function () { fallbackToClipboard(pendingVideoUrl); }, 1500);
+          },
+          'expired-callback': function () {
+            showToast('Captcha expired. Please try again.', 4000);
+          }
+        });
+      } catch (err) {
+        console.error('Turnstile render failed:', err);
+        fallbackToClipboard(videoUrl);
+      }
+    } else {
+      fallbackToClipboard(videoUrl);
+    }
+  }
+
+  function onCaptchaSolved(token) {
+    if (!pendingVideoUrl || !token) return;
+    showLoader('Analyzing video via vd6s.net…');
+    if (captchaBox) captchaBox.classList.remove('active');
+
+    analyzeVideo(pendingVideoUrl, pendingPlatform, token)
+      .then(function (data) {
+        if (data.status === 'success') {
+          renderResultsFromVd6s(data, pendingVideoUrl);
+        } else if (data.status === 'un supported') {
+          showError('This URL is not supported. Try a public YouTube video.');
+        } else if (data.error && data.error.indexOf('Turnstile') >= 0) {
+          // Domain-lock error — fallback
+          showToast('Captcha rejected by vd6s.net. Using fallback...', 4000);
+          setTimeout(function () { fallbackToClipboard(pendingVideoUrl); }, 1500);
+        } else {
+          // Unknown error — fallback to clipboard
+          console.warn('vd6s analyze failed:', data);
+          fallbackToClipboard(pendingVideoUrl);
+        }
+      })
+      .catch(function (err) {
+        console.error('Analyze error:', err);
+        fallbackToClipboard(pendingVideoUrl);
+      });
+  }
+
+  // ---------- Fallback: clipboard + popup ----------
+  function fallbackToClipboard(videoUrl) {
+    copyToClipboard(videoUrl).then(function () {
+      window.open('https://vd6s.net/en5/', '_blank', 'noopener,noreferrer');
+      showToast(
+        '✓ URL copied! Paste it on vd6s.net<br><strong style="color:var(--primary)">Ctrl+V</strong> then press Enter',
+        8000
+      );
+    }).catch(function () {
+      window.open('https://vd6s.net/en5/', '_blank', 'noopener,noreferrer');
+      showToast('Open vd6s.net and paste your YouTube URL.', 5000);
+    });
+  }
+
+  // ---------- Render results ----------
   function renderResultsFromVd6s(data, videoUrl) {
     if (!resultsEl) return;
     clearResults();
 
-    // Extract video ID from URL
     var id = extractVideoId(videoUrl);
     fetchVideoMeta(id).then(function (meta) {
       renderVideoCardWithFormats(meta, data);
     }).catch(function () {
-      // Fallback: use just the URL
-      renderVideoCardWithFormats({ id: id, url: videoUrl, title: 'YouTube Video', author: '', thumbnail: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg', provider: 'YouTube' }, data);
+      renderVideoCardWithFormats({
+        id: id,
+        url: videoUrl,
+        title: 'YouTube Video',
+        author: '',
+        thumbnail: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg',
+        provider: 'YouTube'
+      }, data);
     });
   }
 
@@ -285,7 +345,6 @@
     var card = document.createElement('div');
     card.className = 'video-card';
 
-    // Header
     var headerEl = document.createElement('div');
     headerEl.className = 'video-card__header';
     headerEl.innerHTML =
@@ -303,11 +362,9 @@
         '</div>' +
       '</div>';
 
-    // Body
     var bodyEl = document.createElement('div');
     bodyEl.className = 'video-card__body';
 
-    // Tabs
     var tabsEl = document.createElement('div');
     tabsEl.className = 'tabs';
     tabsEl.innerHTML =
@@ -316,33 +373,26 @@
 
     var contentEl = document.createElement('div');
 
-    // Download panel — one button per format from vd6s
     var downloadPanel = document.createElement('div');
     downloadPanel.setAttribute('data-panel', 'download');
     downloadPanel.className = 'format-list';
 
     if (downloadLinks.length > 0) {
-      // Real format buttons from vd6s.net
       downloadLinks.forEach(function (link) {
         var href = link.getAttribute('href') || '';
         var text = (link.textContent || '').trim();
-        var quality = link.getAttribute('data-quality') || '';
-        var format = link.getAttribute('data-format') || '';
-
         if (!href || href === '#') return;
 
-        // Build absolute URL if relative
         if (href.indexOf('http') !== 0) {
           href = 'https://vd6s.net' + (href.charAt(0) === '/' ? '' : '/') + href;
         }
 
-        var row = document.createElement('div');
-        row.className = 'format-row';
-
         var isAudio = text.toLowerCase().indexOf('mp3') >= 0 || text.toLowerCase().indexOf('m4a') >= 0 || text.toLowerCase().indexOf('audio') >= 0;
         var badgeClass = isAudio ? 'audio' : 'video';
-        var badgeText = format || (isAudio ? 'MP3' : 'MP4');
+        var badgeText = isAudio ? 'MP3' : 'MP4';
 
+        var row = document.createElement('div');
+        row.className = 'format-row';
         row.innerHTML =
           '<div class="format-info">' +
             '<div class="format-badge ' + badgeClass + '">' + escapeHtml(badgeText) + '</div>' +
@@ -352,14 +402,13 @@
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
             'Download' +
           '</a>';
-
         downloadPanel.appendChild(row);
       });
     } else {
-      // Fallback: open vd6s.net with URL pre-copied
+      // Fallback: just show clipboard button
       downloadPanel.innerHTML =
         '<div style="padding:8px 4px 12px;color:var(--text-muted);font-size:14px;line-height:1.6;">' +
-          'Click the button below to open the download page. The YouTube URL is already copied to your clipboard.' +
+          'No direct formats returned. Click below to open vd6s.net with your URL copied.' +
         '</div>' +
         '<div class="format-row">' +
           '<div class="format-info">' +
@@ -373,14 +422,12 @@
         '</div>';
     }
 
-    // Thumbnail panel
     var thumbnailPanel = buildThumbnailPanel(meta);
 
     contentEl.appendChild(downloadPanel);
     contentEl.appendChild(thumbnailPanel);
     thumbnailPanel.style.display = 'none';
 
-    // Tab switching
     tabsEl.querySelectorAll('.tab').forEach(function (tab) {
       tab.addEventListener('click', function () {
         tabsEl.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
@@ -398,20 +445,13 @@
     card.appendChild(bodyEl);
     resultsEl.appendChild(card);
 
-    // Bind open-vd6s button if exists
     var openBtn = document.getElementById('open-vd6s-btn');
     if (openBtn) {
       openBtn.addEventListener('click', function () {
-        copyToClipboard(meta.url).then(function () {
-          window.open('https://vd6s.net/en5/', '_blank', 'noopener,noreferrer');
-          showToast('✓ URL copied! Paste it on vd6s.net (Ctrl+V)', 6000);
-        }).catch(function () {
-          window.open('https://vd6s.net/en5/', '_blank', 'noopener,noreferrer');
-        });
+        fallbackToClipboard(meta.url);
       });
     }
 
-    // Smooth scroll to results
     setTimeout(function () {
       var top = resultsEl.getBoundingClientRect().top + window.scrollY - 20;
       window.scrollTo({ top: top, behavior: 'smooth' });
@@ -449,23 +489,6 @@
     return panel;
   }
 
-  function copyToClipboard(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text);
-    } else {
-      return new Promise(function (resolve, reject) {
-        var ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        try { document.execCommand('copy'); resolve(); } catch (e) { reject(e); }
-        document.body.removeChild(ta);
-      });
-    }
-  }
-
   // ---------- Form submit ----------
   if (formEl) {
     formEl.addEventListener('submit', function (e) {
@@ -480,7 +503,6 @@
       var videoUrl = 'https://www.youtube.com/watch?v=' + id;
       var platform = 'youtube';
 
-      // Show captcha box
       showCaptcha(videoUrl, platform);
     });
   }
@@ -498,7 +520,7 @@
     });
   });
 
-  // ---------- Service worker ----------
+  // ---------- Service worker (only register if file exists) ----------
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/sw.js').catch(function () {});
