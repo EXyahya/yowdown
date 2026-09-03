@@ -5,15 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Download High Quality Mp3 &amp; Mp4! — Ywdown</title>
   <meta name="description" content="Download high quality MP3 and MP4 from YouTube in seconds. Fast, free, no signup. Convert YouTube videos to MP3 (up to 320kbps) or MP4 (up to 4K) with Ywdown — the fastest free YouTube downloader online.">
-  <meta name="keywords" content="download high quality mp3, download high quality mp4, youtube to mp3, youtube to mp4, youtube downloader, mp3 converter, mp4 converter, free youtube downloader, ywdown, youtube video downloader, 4k video downloader, 320kbps mp3 downloader">
+  <meta name="keywords" content="download high quality mp3, download high quality mp4, youtube to mp3, youtube to mp4, youtube downloader, mp3 converter, mp4 converter, free youtube downloader, ywdown, youtube video downloader, 4k video downloader, 320kbps mp3 downloader, trim youtube video, download youtube thumbnail">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="author" content="Ywdown">
-  <meta name="theme-color" content="#121212">
+  <meta name="theme-color" content="#e91e63">
   <meta name="color-scheme" content="light dark">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Ywdown">
+  <meta name="referrer" content="no-referrer-when-downgrade" />
   <link rel="canonical" href="https://ywdown.pages.dev/">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml">
@@ -21,211 +18,314 @@
   <link rel="preload" href="/assets/images/logo.svg" as="image" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/css/style.css">
 
-  <!-- HilltopAds: required meta tag for higher revenue -->
-  <meta name="referrer" content="no-referrer-when-downgrade" />
-
-  <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://ywdown.pages.dev/">
   <meta property="og:title" content="Download High Quality Mp3 & Mp4! — Ywdown">
   <meta property="og:description" content="Download high quality MP3 and MP4 from YouTube in seconds. Fast, free, no signup. Convert YouTube videos to MP3 (up to 320kbps) or MP4 (up to 4K).">
   <meta property="og:site_name" content="Ywdown">
-  <meta property="og:image" content="https://ywdown.pages.dev/assets/images/logo.svg">
-
-  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Download High Quality Mp3 & Mp4! — Ywdown">
-  <meta name="twitter:description" content="Download high quality MP3 and MP4 from YouTube in seconds. Fast, free, no signup.">
-  <meta name="twitter:image" content="https://ywdown.pages.dev/assets/images/logo.svg">
+  <meta name="twitter:description" content="Download high quality MP3 and MP4 from YouTube in seconds.">
 
-  <!-- JSON-LD structured data for Google rich results -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- JSON-LD structured data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Ywdown",
     "url": "https://ywdown.pages.dev/",
-    "description": "Download high quality MP3 and MP4 from YouTube in seconds. Fast, free, no signup. Convert YouTube videos to MP3 (up to 320kbps) or MP4 (up to 4K).",
+    "description": "Download high quality MP3 and MP4 from YouTube in seconds. Fast, free, no signup.",
     "applicationCategory": "MultimediaApplication",
     "operatingSystem": "Web",
-    "browserRequirements": "Requires a modern web browser with JavaScript enabled",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "1247",
-      "bestRating": "5"
-    },
-    "featureList": [
-      "YouTube to MP3 conversion (64kbps to 320kbps)",
-      "YouTube to MP4 conversion (360p to 4K)",
-      "No account required",
-      "No software installation",
-      "Works on mobile, tablet, and desktop"
-    ]
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "1247", "bestRating": "5" }
   }
   </script>
-
-  <!-- Google AdSense — replace ca-pub-XXXXXXXXXXXXXXXX with your AdSense publisher ID -->
-  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
 </head>
-<body class="route-home">
-  <a class="skip-link" href="#text">Skip to content</a>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
 
   <!-- ============ HEADER ============ -->
-  <header id="header">
-    <div class="header-inner">
-      <a id="logo" href="/" aria-label="Ywdown home">
-        <img src="/assets/images/logo.svg" width="168" height="42" alt="Ywdown — Download high quality MP3 and MP4" fetchpriority="high">
-      </a>
-      <nav class="primary-nav" aria-label="Primary navigation">
-        <a href="/" class="active">Home</a>
-        <a href="/pages/faq.html">FAQ</a>
-        <a href="/pages/how-to.html">How to Download</a>
-        <a href="/pages/about.html">About</a>
+  <header class="site-header" id="siteHeader">
+    <div class="container">
+      <nav class="nav" aria-label="Primary">
+        <a class="brand" href="/" aria-label="Ywdown home">
+          <span class="brand-mark">Yw</span>
+        </a>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="/" class="active">Home</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how-to">How to</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="/pages/about.html">About</a></li>
+        </ul>
+        <div class="nav-actions">
+          <button class="icon-btn theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </button>
+          <button class="icon-btn menu-toggle" id="menuToggle" type="button" aria-label="Open menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
+        </div>
       </nav>
-      <div class="nav-actions">
-        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
-          <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        </button>
-        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-        </button>
-      </div>
     </div>
   </header>
 
   <!-- ============ MOBILE DRAWER ============ -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside class="mobile-drawer" id="mobileDrawer" role="dialog" aria-label="Mobile menu">
-    <button class="drawer-close" id="drawerClose" type="button" aria-label="Close menu">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/pages/faq.html">FAQ</a>
-      <a href="/pages/how-to.html">How to Download</a>
-      <a href="/pages/about.html">About</a>
-    </nav>
+    <div class="drawer-header">
+      <span class="drawer-title">Menu</span>
+      <button class="icon-btn" id="drawerClose" type="button" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <ul class="drawer-nav">
+      <li><a href="/">Home</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-to">How to</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="/pages/about.html">About</a></li>
+    </ul>
   </aside>
 
-  <!-- ============ SEARCH FORM ============ -->
-  <form id="searchForm" autocomplete="off" class="search-form" aria-label="YouTube downloader">
-    <div class="form__title">
-      <label for="url">Paste a YouTube link or enter keywords</label>
-      <span class="form__hint">Fast, free and no sign-up</span>
-    </div>
-    <div class="form__input-row">
-      <div class="input">
-        <svg class="input__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.4a7.75 7.75 0 1 1-15.5 0 7.75 7.75 0 0 1 15.5 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="url" type="text" name="q" placeholder="Enter a song title, artist, or YouTube URL" required aria-label="YouTube URL or keywords">
+  <main id="main-content">
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="container">
+        <span class="hero-eyebrow">
+          <span class="pulse"></span>
+          Free forever · No signup · No software
+        </span>
+        <h1>Download High Quality<br><span class="gradient">Mp3 &amp; Mp4</span> from YouTube</h1>
+        <p>Paste any YouTube link and get MP3 audio (up to 320kbps) or MP4 video (up to 4K) in seconds. Plus thumbnails, subtitles, and trim clips — all in your browser.</p>
+
+        <form id="searchForm" autocomplete="off" class="search-form" aria-label="YouTube downloader">
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.35-4.35m2.35-5.4a7.75 7.75 0 1 1-15.5 0 7.75 7.75 0 0 1 15.5 0Z"/></svg>
+            <input id="url" type="text" name="q" placeholder="Paste YouTube URL or search..." required aria-label="YouTube URL">
+          </div>
+          <button type="submit" aria-label="Convert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3 19 12 5 21V3z"/></svg>
+            Convert
+          </button>
+        </form>
+        <p class="form-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          MP3 · M4A · WAV · MP4 · WEBM · 4K · Trim · Thumbnail
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ TOP AD ============ -->
+    <div class="ad-slot">
+      <div class="ad-slot-label">Advertisement</div>
+      <div class="ad-banner ad-leaderboard" id="ad-top">
+        <script src="/assets/js/ads/video-slider.js"></script>
       </div>
     </div>
-    <div class="form__actions">
-      <p class="format-support">MP3, M4A, MP4, WEBM supported</p>
-      <button type="submit" aria-label="Convert video">Convert</button>
+
+    <!-- ============ RESULTS ============ -->
+    <div class="results-wrap" id="results" aria-live="polite"></div>
+
+    <!-- ============ MIDDLE AD ============ -->
+    <div class="ad-slot">
+      <div class="ad-slot-label">Advertisement</div>
+      <div class="ad-banner" id="ad-middle">
+        <script src="/assets/js/ads/banner-300x250.js"></script>
+      </div>
     </div>
-  </form>
 
-  <!-- ============ RESULTS ============ -->
-  <div id="results" aria-live="polite"></div>
+    <!-- ============ FEATURES ============ -->
+    <section class="features" id="features">
+      <h2 class="section-title">Everything you need to download</h2>
+      <p class="section-subtitle">Ywdown is more than just a downloader. It's a complete YouTube toolkit — fast, free, and built for everyone.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <h3>MP3 Audio (up to 320kbps)</h3>
+          <p>Extract high-quality audio from any YouTube video. Choose from 64kbps to 320kbps, or get lossless WAV for studio use.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          </div>
+          <h3>MP4 Video (up to 4K)</h3>
+          <p>Download videos in any resolution — 360p for quick saves, 1080p for HD, or 4K WEBM when the source supports it.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
+          </div>
+          <h3>Trim &amp; Cut</h3>
+          <p>Don't need the whole video? Set a start and end time, and download only the part you want. Perfect for ringtones and clips.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5L13 16"/></svg>
+          </div>
+          <h3>Thumbnail Download</h3>
+          <p>Grab the YouTube video thumbnail in HD, SD, or any size you need. Great for thumbnails in your own projects.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <h3>Lightning Fast</h3>
+          <p>Our optimized backend processes your request in seconds. No long waits, no timeouts, no broken downloads.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Private &amp; Safe</h3>
+          <p>No account, no tracking, no logs. Files stream directly to your device. We never see or store what you download.</p>
+        </div>
+      </div>
+    </section>
 
-  <!-- ============ CONTENT ============ -->
-  <div id="text">
-    <h1 class="center"><strong>Ywdown — Download High Quality Mp3 &amp; Mp4!</strong></h1>
-    <p><strong>Ywdown</strong> is a free online YouTube downloader that lets you <em>download high quality MP3 and MP4</em> files in seconds. Paste a YouTube link, pick a format, and save the file to your device — no account, no software, no sign-up required. Whether you want an MP3 audio file at 320kbps for music, or a 4K MP4 video for offline viewing, Ywdown handles it all right in your browser.</p>
+    <!-- ============ HOW TO ============ -->
+    <section class="steps" id="how-to">
+      <div class="steps-wrap">
+        <h2 class="section-title">How to download in 4 steps</h2>
+        <p class="section-subtitle">From URL to file in under 60 seconds. No software to install, no account to create.</p>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <h3>Copy YouTube URL</h3>
+            <p>Open YouTube, find your video, and copy the link from the address bar or Share button.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <h3>Paste &amp; Convert</h3>
+            <p>Paste the link into the search box above and click Convert. We'll fetch the video info instantly.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <h3>Choose Format</h3>
+            <p>Pick MP3 for audio or MP4 for video. Select your preferred quality, from 64kbps to 4K.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <h3>Download</h3>
+            <p>Click Download and the file saves to your device. That's it — no waiting, no ads in your file.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <h2>Why choose Ywdown?</h2>
-    <ul>
-      <li><strong>High quality downloads</strong> — MP3 up to 320kbps, MP4 up to 4K resolution</li>
-      <li><strong>Fast and free</strong> — no registration, no software installation, no hidden fees</li>
-      <li><strong>Works everywhere</strong> — phones, tablets, laptops, desktops, all browsers</li>
-      <li><strong>Privacy-friendly</strong> — no logs, no tracking, files never touch our servers</li>
-      <li><strong>All formats supported</strong> — MP3, M4A, WAV, MP4, WEBM, and more</li>
-    </ul>
+    <!-- ============ FAQ ============ -->
+    <section class="faq-section" id="faq">
+      <h2 class="section-title">Frequently asked questions</h2>
+      <p class="section-subtitle">Everything you need to know about downloading YouTube videos with Ywdown.</p>
 
-    <h2>How to download a YouTube video</h2>
-    <ol>
-      <li>Open YouTube and copy the video URL from the address bar or Share button</li>
-      <li>Paste the link into the Ywdown search box above</li>
-      <li>Click <strong>Convert</strong> — we'll fetch the video info and show available formats</li>
-      <li>Pick your format and quality (MP3 for audio, MP4 for video)</li>
-      <li>Click <strong>Download</strong> and save the file to your device</li>
-    </ol>
-    <p>For a more detailed walkthrough with screenshots, see our <a href="/pages/how-to.html">How to Download guide</a>.</p>
-
-    <h2>Supported formats and qualities</h2>
-    <p>Ywdown supports every common YouTube output format. Choose based on what you plan to do with the file:</p>
-    <ul>
-      <li><strong>MP3 (64–320 kbps)</strong> — best for music, podcasts, audiobooks, and any audio-only use</li>
-      <li><strong>M4A (128 kbps)</strong> — alternative audio format, natively supported by Apple devices</li>
-      <li><strong>WAV (Lossless)</strong> — uncompressed audio for studio and editing workflows</li>
-      <li><strong>MP4 (360p–4K)</strong> — universal video format for phones, tablets, laptops, and TVs</li>
-      <li><strong>WEBM (1080p, 4K)</strong> — open video format with excellent compression at high resolutions</li>
-    </ul>
-    <p>The actual quality depends on the original video's source stream. If a video was uploaded at 720p, you can't get 4K from it. Always pick the highest setting that matches the source for the best balance of quality and file size.</p>
-
-    <h2>Best audio settings for different uses</h2>
-    <p>For spoken content like podcasts, interviews, and audiobooks, <strong>128 kbps MP3</strong> is plenty. It offers clear speech with a small file size. For music, <strong>192 kbps MP3</strong> is the sweet spot — good quality, reasonable file size. For high-fidelity listening with good headphones, choose <strong>256 or 320 kbps MP3</strong>. If you need studio-grade audio, <strong>WAV (Lossless)</strong> preserves every detail, but the files are much larger.</p>
-
-    <h2>Best video settings for different devices</h2>
-    <p>For phones with limited storage or slow internet, <strong>360p or 480p MP4</strong> is great — small files, quick downloads. For laptops and monitors, <strong>720p or 1080p MP4</strong> looks sharp on most screens. For 4K TVs or large displays, choose <strong>1440p MP4 or 4K WEBM</strong> when the source supports it. Higher resolution means bigger files, so pick what matches your screen.</p>
-
-    <h2>Frequently asked questions</h2>
-    <div class="faq-section">
       <details class="faq-item">
         <summary>Is Ywdown really free?</summary>
-        <p>Yes. Ywdown is 100% free to use. There are no subscriptions, no hidden fees, and no sign-ups required. You can convert and download as many public YouTube videos as you want.</p>
+        <p>Yes, 100% free. No subscriptions, no hidden fees, no sign-ups. Convert and download as many public YouTube videos as you want.</p>
       </details>
       <details class="faq-item">
         <summary>What's the highest quality I can download?</summary>
-        <p>Audio: up to 320 kbps MP3 or Lossless WAV. Video: up to 4K WEBM when the source supports it. The actual quality is always limited by the original video's upload quality.</p>
+        <p>Audio: up to 320kbps MP3 or Lossless WAV. Video: up to 4K WEBM. Quality depends on what the original video was uploaded at.</p>
       </details>
       <details class="faq-item">
         <summary>Do I need to install any software?</summary>
-        <p>No. Ywdown runs entirely in your browser. Just paste a YouTube link, pick a format, and download — no apps, no extensions, no plugins.</p>
+        <p>No. Ywdown runs entirely in your browser. Just paste a link, pick a format, and download. Works on phones, tablets, and desktops.</p>
       </details>
       <details class="faq-item">
         <summary>Can I download private or age-restricted videos?</summary>
-        <p>No. Ywdown only works with public YouTube videos. Private, age-restricted, members-only, or region-locked content cannot be downloaded.</p>
+        <p>No. Ywdown only works with public YouTube videos. Private, age-restricted, or region-locked content cannot be downloaded.</p>
       </details>
       <details class="faq-item">
-        <summary>Does Ywdown work on iPhone and iPad?</summary>
-        <p>Yes. Ywdown works on iOS, iPadOS, Android, Windows, macOS, and Linux. The layout adapts to any screen size.</p>
+        <summary>Can I trim or cut a video before downloading?</summary>
+        <p>Yes! After converting, switch to the "Trim" tab. Enter start and end times, then download just that part of the video.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I download the YouTube thumbnail?</summary>
+        <p>Yes! Switch to the "Thumbnail" tab after converting. You can download the thumbnail in HD, SD, or any available size.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Does Ywdown work on iPhone?</summary>
+        <p>Yes. Ywdown works on iOS, Android, Windows, macOS, and Linux. The layout adapts to any screen size.</p>
       </details>
       <details class="faq-item">
         <summary>Is it legal to download YouTube videos?</summary>
-        <p>The legality depends on the video's license and your local laws. Only download content you own, have permission to use, or that is licensed for reuse (like Creative Commons). Always review YouTube's Terms of Service and the creator's license before downloading.</p>
+        <p>The legality depends on the video's license and your local laws. Only download content you own, have permission to use, or that is licensed for reuse. Always respect the creator's terms.</p>
       </details>
-    </div>
+    </section>
+  </main>
 
-    <p style="margin-top: 32px; padding: 16px; background: var(--canvas); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); font-size: 13px; color: var(--muted);">
-      <strong style="color: var(--heading);">Responsible use:</strong> Only download content you own, have permission to download, or that is licensed for reuse. Downloading does not transfer copyright to you. Always respect the creator's terms and your local copyright laws. Don't redistribute downloaded files publicly without the creator's permission. <a href="/pages/about.html">Read more →</a>
-    </p>
+  <!-- ============ FOOTER AD ============ -->
+  <div class="ad-slot">
+    <div class="ad-slot-label">Advertisement</div>
+    <div class="ad-banner" id="ad-bottom">
+      <script src="/assets/js/ads/inpage-push.js"></script>
+    </div>
   </div>
 
   <!-- ============ FOOTER ============ -->
   <footer class="site-footer">
-    <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="/" style="color:#fff;">
+          <span class="brand-mark">Yw</span>
+          <span>Ywdown</span>
+        </a>
+        <p>The fastest free YouTube downloader. Convert videos to MP3 or MP4, trim clips, grab thumbnails — all in your browser, no signup needed.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Tools</h4>
+        <ul>
+          <li><a href="/">YouTube to MP3</a></li>
+          <li><a href="/">YouTube to MP4</a></li>
+          <li><a href="/">YouTube Trimmer</a></li>
+          <li><a href="/">Thumbnail Downloader</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="/pages/how-to.html">How to Download</a></li>
+          <li><a href="/pages/faq.html">FAQ</a></li>
+          <li><a href="/pages/about.html">About Us</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/pages/about.html">Terms of Use</a></li>
+          <li><a href="/pages/about.html">Privacy Policy</a></li>
+          <li><a href="/pages/about.html">Copyright</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
       <span>&copy; <span id="year"></span> Ywdown. All rights reserved.</span>
-      <nav class="footer-links" aria-label="Footer navigation">
-        <a href="/">Home</a>
-        <a href="/pages/faq.html">FAQ</a>
-        <a href="/pages/how-to.html">How to Download</a>
-        <a href="/pages/about.html">About</a>
-      </nav>
+      <span>Built with care for creators and viewers.</span>
     </div>
   </footer>
 
+  <!-- ============ Anti-AdBlock Overlay ============ -->
+  <div class="adblock-overlay" id="adblockOverlay">
+    <div class="adblock-modal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      <h2>Please disable your ad blocker</h2>
+      <p>Ywdown is a free service supported by ads. Please disable your ad blocker to help us keep this tool free for everyone.</p>
+      <ol>
+        <li>Click your ad blocker icon in the browser toolbar</li>
+        <li>Select "Disable on this site" or "Pause on this site"</li>
+        <li>Refresh the page</li>
+      </ol>
+      <button type="button" id="adblockClose">I've disabled it</button>
+    </div>
+  </div>
+
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
   <script src="/assets/js/app.js" defer></script>
-
-  <!-- HilltopAds: Popunder script with anti-AdBlock (zone #7380817) -->
   <script src="/assets/js/hilltopads.js"></script>
 </body>
 </html>
